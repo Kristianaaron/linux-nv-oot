@@ -6215,11 +6215,16 @@ compile_test() {
             # wrapper functions") from v6.3-rc1 (2023-02-09) in the
             # linux kernel tree.
             #
+            # Users only need to know whether vm_flags must be changed through
+            # the vm_flags_set()/vm_flags_clear() helpers, so test for the
+            # helper itself. Testing the '__vm_flags' member misses Linux 7.x,
+            # where that union member became 'vma_flags_t flags'. Taking the
+            # address fails to compile when the helper is not declared.
+            #
             CODE="
-            #include <linux/mm_types.h>
-            int conftest_vm_area_struct_has_const_vm_flags(void) {
-                return offsetof(struct vm_area_struct, __vm_flags);
-            }"
+            #include <linux/mm.h>
+            void (*conftest_vm_area_struct_has_const_vm_flags)(struct vm_area_struct *,
+                                                               vm_flags_t) = vm_flags_set;"
 
             compile_check_conftest "$CODE" "NV_VM_AREA_STRUCT_HAS_CONST_VM_FLAGS" "" "types"
         ;;
