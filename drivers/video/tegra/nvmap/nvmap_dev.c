@@ -1493,7 +1493,11 @@ int __init nvmap_probe(struct platform_device *pdev)
 			generic_carveout_present = 1;
 
 	if (generic_carveout_present) {
+#if defined(NV_DEVICE_IOMMU_MAPPED_PRESENT)
+		if (!device_iommu_mapped(&pdev->dev) &&
+#else
 		if (!iommu_present(&platform_bus_type) &&
+#endif
 			!nvmap_is_iommu_present())
 			nvmap_convert_iovmm_to_carveout = 1;
 		else if (!of_property_read_bool(pdev->dev.of_node,

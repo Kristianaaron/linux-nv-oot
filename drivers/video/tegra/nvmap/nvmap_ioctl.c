@@ -7,6 +7,8 @@
 
 #define pr_fmt(fmt)	"nvmap: %s() " fmt, __func__
 
+#include <nvidia/conftest.h>
+
 #include <linux/dma-mapping.h>
 #include <linux/export.h>
 #include <linux/fs.h>
@@ -45,7 +47,11 @@
 #endif
 
 #if defined(CONFIG_TEGRA_SYSTEM_TYPE_ACK)
+#if defined(NV_MODULE_IMPORT_NS_TAKES_IDENTIFIER)
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
+#elif defined(MODULE_IMPORT_NS)
+MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
+#endif
 #endif
 
 extern struct device tegra_vpr_dev;
@@ -176,7 +182,7 @@ int nvmap_ioctl_getfd(struct file *filp, void __user *arg)
 	if (!ret && !IS_ERR_OR_NULL(handle))
 		trace_refcount_getfd(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 
 fail:
@@ -246,7 +252,7 @@ int nvmap_ioctl_alloc(struct file *filp, void __user *arg)
 		dmabuf = is_ro ? handle->dmabuf_ro : handle->dmabuf;
 		trace_refcount_alloc(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 	}
 	nvmap_handle_put(handle);
@@ -388,12 +394,12 @@ out:
 		if (cmd == NVMAP_IOC_FROM_FD)
 			trace_refcount_create_handle_from_fd(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 		else
 			trace_refcount_create_handle(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 	}
 
@@ -476,7 +482,7 @@ out:
 	if (!err)
 		trace_refcount_create_handle_from_va(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 	atomic_dec(&ref->dupes);
 	return err;
@@ -1272,7 +1278,7 @@ exit:
 		dmabuf = is_ro ? handle->dmabuf_ro : handle->dmabuf;
 		trace_refcount_get_sci_ipc_id(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 	}
 
@@ -1515,7 +1521,7 @@ out:
 	if (!ret && !IS_ERR_OR_NULL(handle))
 		trace_refcount_dup_handle(handle, dmabuf,
 				atomic_read(&handle->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 
 	if (!IS_ERR(ref))

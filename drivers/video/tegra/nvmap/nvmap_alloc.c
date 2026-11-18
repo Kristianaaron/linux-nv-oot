@@ -7,7 +7,10 @@
 
 #define pr_fmt(fmt)	"%s: " fmt, __func__
 
+#include <nvidia/conftest.h>
+
 #include <linux/moduleparam.h>
+#include <linux/fs.h>
 #include <linux/random.h>
 #include <linux/version.h>
 #include <linux/io.h>
@@ -76,8 +79,8 @@ static struct page *nvmap_alloc_pages_exact(gfp_t gfp, size_t size, bool use_num
 		return NULL;
 
 	split_page(page, order);
-	e = nth_page(page, (1 << order));
-	for (p = nth_page(page, (size >> PAGE_SHIFT)); p < e; p++)
+	e = nvmap_nth_page(page, (1 << order));
+	for (p = nvmap_nth_page(page, (size >> PAGE_SHIFT)); p < e; p++)
 		__free_page(p);
 
 	return page;
@@ -518,7 +521,7 @@ static int handle_page_alloc(struct nvmap_client *client,
 			goto fail;
 
 		for (i = 0; i < nr_page; i++)
-			pages[i] = nth_page(page, i);
+			pages[i] = nvmap_nth_page(page, i);
 
 	} else {
 #ifdef CONFIG_ARM64_4K_PAGES
@@ -546,7 +549,7 @@ static int handle_page_alloc(struct nvmap_client *client,
 				break;
 
 			for (idx = 0; idx < pages_per_big_pg; idx++)
-				pages[i + idx] = nth_page(page, idx);
+				pages[i + idx] = nvmap_nth_page(page, idx);
 			nvmap_clean_cache(&pages[i], pages_per_big_pg);
 		}
 		nvmap_big_page_allocs += page_index;
@@ -563,8 +566,13 @@ static int handle_page_alloc(struct nvmap_client *client,
 			if (page_index < nr_page) {
 				int nid = h->numa_id == NUMA_NO_NODE ? numa_mem_id() : h->numa_id;
 
+#if defined(NV_ALLOC_PAGES_BULK_PRESENT)
+				allocated = __alloc_pages_bulk(gfp, nid, NULL,
+						nr_page, pages);
+#else
 				allocated = __alloc_pages_bulk(gfp, nid, NULL,
 						nr_page, NULL, pages);
+#endif
 			}
 #endif
 			for (i = allocated; i < nr_page; i++) {
@@ -1204,7 +1212,7 @@ void nvmap_free_handle_from_fd(struct nvmap_client *client,
 	if (handle) {
 		dmabuf = is_ro ? handle->dmabuf_ro : handle->dmabuf;
 		handle_ref = atomic_read(&handle->ref);
-		dmabuf_ref = dmabuf ? atomic_long_read(&dmabuf->file->f_count) : 0;
+		dmabuf_ref = dmabuf ? file_count(dmabuf->file) : 0;
 	}
 
 	trace_refcount_free_handle(handle, dmabuf, handle_ref, dmabuf_ref,

@@ -5,9 +5,13 @@
 
 #define pr_fmt(fmt)	"nvmap: %s() " fmt, __func__
 
+#include <nvidia/conftest.h>
+
 #include <linux/io.h>
 #include <linux/debugfs.h>
 #include <linux/of.h>
+#include <linux/build_bug.h>
+#include <linux/dma-direction.h>
 #include <linux/version.h>
 #if KERNEL_VERSION(4, 15, 0) > LINUX_VERSION_CODE
 #include <soc/tegra/chip-id.h>
@@ -34,6 +38,9 @@ __weak struct arm64_ftr_reg arm64_ftr_reg_ctrel0;
  *   __clean_dcache_page() is only available on ARM64 (well, we haven't
  *   implemented it on ARMv7).
  */
+/* nvmap_cache_maint.S hard-codes these when the kernel does not export them. */
+static_assert(DMA_TO_DEVICE == 1 && DMA_FROM_DEVICE == 2);
+
 void nvmap_clean_cache_page(struct page *page)
 {
 	__clean_dcache_area_poc(page_address(page), PAGE_SIZE);
@@ -148,7 +155,11 @@ int nvmap_cache_maint_phys_range(unsigned int op, phys_addr_t pstart,
 		void *base;
 		next = min(next, pend);
 #if defined(CONFIG_GENERIC_IOREMAP)
+#if defined(NV_IOREMAP_PROT_TAKES_PGPROT)
+		io_addr = ioremap_prot(loop, PAGE_SIZE, __pgprot(pgprot_val(PAGE_KERNEL)));
+#else
 		io_addr = ioremap_prot(loop, PAGE_SIZE, pgprot_val(PAGE_KERNEL));
+#endif
 #else
 		io_addr = __ioremap(loop, PAGE_SIZE, PG_PROT_KERNEL);
 #endif

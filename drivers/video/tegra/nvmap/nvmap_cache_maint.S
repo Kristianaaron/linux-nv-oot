@@ -18,6 +18,17 @@
 #include <asm/asm-uaccess.h>
 
 /*
+ * Newer kernels no longer export enum dma_data_direction to assembly through
+ * asm-offsets. nvmap_cache.c asserts these values at build time.
+ */
+#ifndef DMA_TO_DEVICE
+#define DMA_TO_DEVICE	1
+#endif
+#ifndef DMA_FROM_DEVICE
+#define DMA_FROM_DEVICE	2
+#endif
+
+/*
  *	invalidate_icache_range(start,end)
  *
  *	Ensure that the I cache is invalid within specified region.

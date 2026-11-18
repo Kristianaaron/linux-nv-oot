@@ -10,6 +10,7 @@
 #define pr_fmt(fmt)	"%s: " fmt, __func__
 
 #include <linux/slab.h>
+#include <linux/fs.h>
 #include <linux/nvmap.h>
 #include <linux/rbtree.h>
 #include <linux/list.h>
@@ -349,7 +350,7 @@ unlock:
 		if (!client->ida)
 			trace_refcount_create_handle_from_sci_ipc_id(h, dmabuf,
 				atomic_read(&h->ref),
-				atomic_long_read(&dmabuf->file->f_count),
+				file_count(dmabuf->file),
 				is_ro ? "RO" : "RW");
 		else
 			trace_refcount_get_handle_from_sci_ipc_id(h, dmabuf,

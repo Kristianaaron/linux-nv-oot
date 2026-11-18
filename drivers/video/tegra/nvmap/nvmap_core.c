@@ -7,6 +7,8 @@
 
 #define pr_fmt(fmt)	"nvmap: %s() " fmt, __func__
 
+#include <nvidia/conftest.h>
+
 #include <linux/err.h>
 #include <linux/highmem.h>
 #include <linux/io.h>
@@ -196,12 +198,16 @@ void *__nvmap_mmap(struct nvmap_handle *h)
 			goto out;
 
 		for (i = 0; i < nr_pages; i++)
-			pages[i] = nth_page(page, i);
+			pages[i] = nvmap_nth_page(page, i);
 
 		vaddr = vmap(pages, nr_pages, VM_MAP, prot);
 	} else {
 #if defined(CONFIG_GENERIC_IOREMAP)
+#if defined(NV_IOREMAP_PROT_TAKES_PGPROT)
+		vaddr = ioremap_prot(h->carveout->base, adj_size, __pgprot(pgprot_val(prot)));
+#else
 		vaddr = ioremap_prot(h->carveout->base, adj_size, pgprot_val(prot));
+#endif
 #else
 		vaddr = (__force void *)__ioremap(h->carveout->base, adj_size,
 			 prot);

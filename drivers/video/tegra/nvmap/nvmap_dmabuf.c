@@ -561,7 +561,9 @@ static struct dma_buf_ops nvmap_dma_buf_ops = {
 	.vmap		= nvmap_dmabuf_vmap,
 	.vunmap		= nvmap_dmabuf_vunmap,
 #if LINUX_VERSION_CODE > KERNEL_VERSION(5, 4, 0)
+#if defined(NV_STRUCT_DMA_BUF_OPS_HAS_CACHE_SGT_MAPPING)
 	.cache_sgt_mapping = true,
+#endif
 #endif
 
 };

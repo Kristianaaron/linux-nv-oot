@@ -10,6 +10,12 @@
 
 #include <nvidia/conftest.h>
 
+#if defined(NV_NTH_PAGE_PRESENT)
+#define nvmap_nth_page(page, n) nth_page(page, n)
+#else
+#define nvmap_nth_page(page, n) ((page) + (n))
+#endif
+
 #include <linux/list.h>
 #include <linux/mm.h>
 #include <linux/mutex.h>
@@ -872,11 +878,11 @@ extern struct of_device_id __nvmapcache_of_table;
 int nvmap_sci_ipc_init(void);
 void nvmap_sci_ipc_exit(void);
 #else
-__weak int nvmap_sci_ipc_init(void)
+static inline int nvmap_sci_ipc_init(void)
 {
 	return 0;
 }
-__weak void nvmap_sci_ipc_exit(void)
+static inline void nvmap_sci_ipc_exit(void)
 {
 }
 #endif

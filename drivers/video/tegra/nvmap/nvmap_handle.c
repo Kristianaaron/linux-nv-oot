@@ -332,8 +332,11 @@ found:
 	if (!h->dmabuf)
 		goto fail;
 	BUG_ON(!h->dmabuf->file);
-	/* This is same as get_dma_buf() if file->f_count was non-zero */
-	if (atomic_long_inc_not_zero(&h->dmabuf->file->f_count) == 0)
+#if defined(NV_GET_FILE_RCU_HAS_DOUBLE_PTR_FILE_ARG)
+	if (!get_file_rcu(&h->dmabuf->file))
+#else
+	if (!get_file_rcu(h->dmabuf->file))
+#endif
 		goto fail;
 	mutex_unlock(&h->lock);
 
