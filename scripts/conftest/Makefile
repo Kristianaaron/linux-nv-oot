@@ -43,7 +43,13 @@ NV_CONFTEST_CMD := /bin/sh $(NV_CONFTEST_SCRIPT) \
 
 NV_CFLAGS_FROM_CONFTEST := $(shell $(NV_CONFTEST_CMD) build_cflags)
 
-NV_CONFTEST_CFLAGS = $(NV_CFLAGS_FROM_CONFTEST) $(EXTRA_CFLAGS) -fno-pie -Werror -Wno-address-of-packed-member
+# Probe with the kernel's own C dialect. Without it a compiler that defaults to C23 (GCC 15+)
+# fails every probe and conftest reports kernel features as missing. This Makefile is run with
+# -f, so the kernel's CC_FLAGS_DIALECT is not set here: take -std from the kernel Makefile and
+# -fms-extensions (CONFIG_CC_MS_EXTENSIONS, recent kernels) from the kernel config.
+NV_KERNEL_C_DIALECT := $(shell sed -nE 's/.*(-std=gnu[0-9]+).*/\1/p' $(NV_KERNEL_SOURCES)/Makefile | head -n1)
+NV_KERNEL_C_DIALECT += $(shell sed -n 's/^CONFIG_CC_MS_EXTENSIONS=//p' $(NV_KERNEL_OUTPUT)/include/config/auto.conf 2>/dev/null)
+NV_CONFTEST_CFLAGS = $(NV_CFLAGS_FROM_CONFTEST) $(NV_KERNEL_C_DIALECT) $(EXTRA_CFLAGS) -fno-pie -Werror -Wno-address-of-packed-member
 
 NV_CONFTEST_COMPILE_TEST_HEADERS := $(obj)/conftest/macros.h
 NV_CONFTEST_COMPILE_TEST_HEADERS += $(obj)/conftest/functions.h
