@@ -6229,6 +6229,102 @@ compile_test() {
             compile_check_conftest "$CODE" "NV_VM_AREA_STRUCT_HAS_CONST_VM_FLAGS" "" "types"
         ;;
 
+        module_import_ns_takes_identifier)
+            # Linux 6.13 made MODULE_IMPORT_NS() take a string literal
+            # ("DMA_BUF") instead of a bare identifier (DMA_BUF).
+            CODE="
+            #include <linux/module.h>
+            MODULE_IMPORT_NS(DMA_BUF);"
+
+            compile_check_conftest "$CODE" "NV_MODULE_IMPORT_NS_TAKES_IDENTIFIER" "" "types"
+        ;;
+
+        alloc_pages_bulk_present)
+            # The bulk page allocator dropped its page-list argument:
+            # alloc_pages_bulk_noprof(gfp, nid, nodemask, nr_pages, page_array).
+            # alloc_pages_bulk is a macro there, so probe the function.
+            CODE="
+            #include <linux/gfp.h>
+            unsigned long (*conftest_alloc_pages_bulk_present)(gfp_t, int,
+                    nodemask_t *, int, struct page **) = alloc_pages_bulk_noprof;"
+
+            compile_check_conftest "$CODE" "NV_ALLOC_PAGES_BULK_PRESENT" "" "types"
+        ;;
+
+        device_iommu_mapped_present)
+            # Linux 7.x removed iommu_present() in favor of per-device checks.
+            CODE="
+            #include <linux/iommu.h>
+            bool (*conftest_device_iommu_mapped_present)(struct device *) =
+                    device_iommu_mapped;"
+
+            compile_check_conftest "$CODE" "NV_DEVICE_IOMMU_MAPPED_PRESENT" "" "types"
+        ;;
+
+        ioremap_prot_takes_pgprot)
+            # Linux 7.2 changed ioremap_prot() to take pgprot_t.
+            CODE="
+            #include <linux/io.h>
+            void __iomem *(*conftest_ioremap_prot_takes_pgprot)(phys_addr_t,
+                    size_t, pgprot_t) = ioremap_prot;"
+
+            compile_check_conftest "$CODE" "NV_IOREMAP_PROT_TAKES_PGPROT" "" "types"
+        ;;
+
+        nth_page_present)
+            # Linux 7.x removed nth_page(). It was always a function-like
+            # macro, so test that the macro is defined.
+            CODE="
+            #include <linux/mm.h>
+            #ifndef nth_page
+            #error nth_page() is not defined
+            #endif"
+
+            compile_check_conftest "$CODE" "NV_NTH_PAGE_PRESENT" "" "types"
+        ;;
+
+        struct_dma_buf_ops_has_cache_sgt_mapping)
+            # Linux 7.x removed dma_buf_ops.cache_sgt_mapping.
+            CODE="
+            #include <linux/dma-buf.h>
+            int conftest_struct_dma_buf_ops_has_cache_sgt_mapping(void) {
+                    return offsetof(struct dma_buf_ops, cache_sgt_mapping);
+            }"
+
+            compile_check_conftest "$CODE" "NV_STRUCT_DMA_BUF_OPS_HAS_CACHE_SGT_MAPPING" "" "types"
+        ;;
+
+        hrtimer_setup_present)
+            # hrtimer_setup() was added in Linux 6.13 and hrtimer_init() was later removed.
+            CODE="
+            #include <linux/hrtimer.h>
+            void (*conftest_hrtimer_setup_present)(struct hrtimer *,
+                    enum hrtimer_restart (*)(struct hrtimer *), clockid_t,
+                    enum hrtimer_mode) = hrtimer_setup;"
+
+            compile_check_conftest "$CODE" "NV_HRTIMER_SETUP_PRESENT" "" "types"
+        ;;
+
+        strncpy_present)
+            # strncpy() was removed in Linux 7.x.
+            CODE="
+            #include <linux/string.h>
+            char *(*conftest_strncpy_present)(char *, const char *,
+                    __kernel_size_t) = strncpy;"
+
+            compile_check_conftest "$CODE" "NV_STRNCPY_PRESENT" "" "types"
+        ;;
+
+        zap_special_vma_range_present)
+            # zap_vma_ptes() was replaced by zap_special_vma_range() in Linux 7.x.
+            CODE="
+            #include <linux/mm.h>
+            void (*conftest_zap_special_vma_range_present)(struct vm_area_struct *,
+                    unsigned long, unsigned long) = zap_special_vma_range;"
+
+            compile_check_conftest "$CODE" "NV_ZAP_SPECIAL_VMA_RANGE_PRESENT" "" "types"
+        ;;
+
         drm_driver_has_dumb_destroy)
             #
             # Determine if the 'drm_driver' structure has a 'dumb_destroy'

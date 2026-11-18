@@ -203,7 +203,16 @@ NV_CONFTEST_GENERIC_COMPILE_TESTS += is_export_symbol_present_drm_gem_prime_hand
 NV_CONFTEST_FUNCTION_COMPILE_TESTS += crypto_engine_ctx_struct_removed_test
 NV_CONFTEST_MACRO_COMPILE_TESTS ?=
 NV_CONFTEST_SYMBOL_COMPILE_TESTS ?=
+NV_CONFTEST_TYPE_COMPILE_TESTS += alloc_pages_bulk_present
+NV_CONFTEST_TYPE_COMPILE_TESTS += device_iommu_mapped_present
+NV_CONFTEST_TYPE_COMPILE_TESTS += hrtimer_setup_present
+NV_CONFTEST_TYPE_COMPILE_TESTS += ioremap_prot_takes_pgprot
+NV_CONFTEST_TYPE_COMPILE_TESTS += module_import_ns_takes_identifier
+NV_CONFTEST_TYPE_COMPILE_TESTS += nth_page_present
 NV_CONFTEST_TYPE_COMPILE_TESTS += request_struct_has_completion_data_arg
+NV_CONFTEST_TYPE_COMPILE_TESTS += strncpy_present
+NV_CONFTEST_TYPE_COMPILE_TESTS += struct_dma_buf_ops_has_cache_sgt_mapping
+NV_CONFTEST_TYPE_COMPILE_TESTS += zap_special_vma_range_present
 
 $(eval $(call NV_GENERATE_COMPILE_TEST_HEADER,functions,$(NV_CONFTEST_FUNCTION_COMPILE_TESTS)))
 $(eval $(call NV_GENERATE_COMPILE_TEST_HEADER,generic,$(NV_CONFTEST_GENERIC_COMPILE_TESTS)))
