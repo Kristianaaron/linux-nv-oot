@@ -27,9 +27,6 @@
 #endif
 #endif /* !NVMAP_LOADABLE_MODULE */
 
-#ifdef NVMAP_UPSTREAM_KERNEL
-#include <linux/libnvdimm.h>
-#endif /* NVMAP_UPSTREAM_KERNEL */
 #include "nvmap_priv.h"
 
 bool nvmap_convert_carveout_to_iovmm;
@@ -743,13 +740,8 @@ static void alloc_handle(struct nvmap_client *client,
 									    MEMREMAP_WB);
 							if (cpu_addr != NULL) {
 								memset(cpu_addr, 0, granule_size);
-#ifdef NVMAP_UPSTREAM_KERNEL
-								arch_invalidate_pmem(cpu_addr,
-										     granule_size);
-#else
 								__dma_flush_area(cpu_addr,
 										 granule_size);
-#endif
 								memunmap(cpu_addr);
 							}
 
@@ -759,11 +751,7 @@ static void alloc_handle(struct nvmap_client *client,
 								MEMREMAP_WB);
 						if (cpu_addr != NULL) {
 							memset(cpu_addr, 0, h->size);
-#ifdef NVMAP_UPSTREAM_KERNEL
-							arch_invalidate_pmem(cpu_addr, h->size);
-#else
 							__dma_flush_area(cpu_addr, h->size);
-#endif
 							memunmap(cpu_addr);
 						}
 					}
